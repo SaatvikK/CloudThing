@@ -14,6 +14,6 @@ func main() {
 func routing() {
 	router := mux.NewRouter()
 	APISubRouter := router.PathPrefix("/api/v1").Subrouter()
-	APISubRouter.HandleFunc("/{username}:{password}@{ConnType}", handlers.login).Methods(http.MethodConnect)
+	APISubRouter.HandleFunc("/{username}:{password}@{ConnType}", login).Methods(http.MethodConnect)
 	log.Fatal(http.ListenAndServe(":8080", router))
 }
