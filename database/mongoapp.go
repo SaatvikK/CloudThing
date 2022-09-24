@@ -35,7 +35,7 @@ func checkReadDB(email string, pwd string) {
 		}
 		panic(err)
 	}
-	fmt.Println(result)
+	fmt.Println(reflect.TypeOf(result))
 }
 
 func main() {
