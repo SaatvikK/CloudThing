@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"reflect"
+	"time"
 
 	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
@@ -33,6 +34,21 @@ func conn() *mongo.Client { // Connecting to the MongoDB database
 	}
 	fmt.Println(reflect.TypeOf(client))
 	return client
+}
+
+func checkIfIDInArr(arr session, SessionID int) interface{} {
+	for i := 0; i < arr.Len(); i++ {
+		ThisSession := arr[i]
+		if ThisSession.SessionID == SessionID {
+			return ThisSession
+		}
+	}
+	return false
+}
+
+func getDate() string {
+	dt := time.Now()
+	return dt.String()
 }
 
 func checkLoginDetails(UserID string, pwd string) ReturnInfo { // Access the user's account and see if the login details are correct.
@@ -92,12 +108,47 @@ func postNewWorkspace(res http.ResponseWriter, req *http.Request) {
 	fmt.Println(req.RemoteAddr)
 	PathParams := mux.Vars(req) // Getting the parameters of the URL as a dictionary.
 	res.Header().Set("Content-Type", "application/json")
+	SessionID, ok := PathParams["SessionID"]
+	if !ok {
+		fmt.Println("SessionID ERR")
+		fmt.Println(ok)
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(fmt.Sprintln(`{ "result": false, "reason": "Error in parsing SessionID param.", "error": `, ok, `, "data": nil }`)))
+		return
+	}
+
+	ThisSession := checkIfIDInArr(sessions, SessionID)
+	if ThisSession == false {
+		res.WriteHeader(http.StatusUnauthorized)
+		res.Write([]byte(fmt.Sprintln(`{ "result": false, "reason": "Not logged in.", "error": nil, "data": nil }`)))
+		return
+	}
+
 	WorkspaceName, ok := PathParams["WorkspaceName"]
 	if !ok {
 		fmt.Println("Workspace ERR")
 		fmt.Println(ok)
 		res.WriteHeader(http.StatusBadRequest)
 		res.Write([]byte(fmt.Sprintln(`{ "result": false, "reason": "Error in providing workspace name.", "error":`, ok, `, "data": nil }`)))
+		return
+	}
+
+	// Creating the new workspace (a collection)
+	client := conn()
+	collection := client.Database("Main").Collection(WorkspaceName)
+	doc := bson.D{
+		{"UserID", ThisSession.UserID},
+		{"CreatedOn", getDate()},
+	}
+	result, err := collection.InsertOne(context.TODO(), doc)
+	if err != nil {
+		panic(err)
+		res.WriteHeader(http.StatusBadRequest)
+		res.Write([]byte(fmt.Sprintln(`{ "result":`, result, `, "reason": "Unexpected error.", "error":`, err, `, "data": nil }`)))
+		return
+	} else {
+		res.WriteHeader(http.StatusOK)
+		res.Write([]byte(fmt.Sprintln(`{ "result":`, result, `, "reason": "Workspace created.", "error":`, err, `, "data": nil }`)))
 		return
 	}
 }
