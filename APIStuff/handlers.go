@@ -145,6 +145,7 @@ func postNewWorkspace(res http.ResponseWriter, req *http.Request) {
 		panic(err)
 		res.WriteHeader(http.StatusBadRequest)
 		res.Write([]byte(fmt.Sprintln(`{ "result":`, result, `, "reason": "Unexpected error.", "error":`, err, `, "data": nil }`)))
+
 		return
 	} else {
 		res.WriteHeader(http.StatusOK)
