@@ -36,8 +36,8 @@ func conn() *mongo.Client { // Connecting to the MongoDB database
 	return client
 }
 
-func checkIfIDInArr(arr session, SessionID int) interface{} {
-	for i := 0; i < arr.Len(); i++ {
+func checkIfIDInArr(arr []session, SessionID int) interface{} {
+	for i := 0; i < len(arr); i++ {
 		ThisSession := arr[i]
 		if ThisSession.SessionID == SessionID {
 			return ThisSession
